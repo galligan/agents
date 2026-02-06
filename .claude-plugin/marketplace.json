@@ -1,0 +1,33 @@
+{
+  "name": "agents",
+  "owner": {
+    "name": "Matt Galligan",
+    "email": "mg@outfitter.dev"
+  },
+  "metadata": {
+    "description": "Hand-crafted skills for agentic workflows",
+    "version": "1.0.0"
+  },
+  "repository": "https://github.com/galligan/agents",
+  "strict": false,
+  "plugins": [
+    {
+      "name": "gitbutler",
+      "source": "./",
+      "version": "1.0.0",
+      "description": "GitButler virtual branches, stacks, multi-agent coordination, and branch lifecycle management.",
+      "author": {
+        "name": "Matt Galligan",
+        "email": "mg@outfitter.dev"
+      },
+      "license": "MIT",
+      "keywords": [
+        "gitbutler",
+        "virtual-branches",
+        "stacks",
+        "multi-agent",
+        "version-control"
+      ]
+    }
+  ]
+}
