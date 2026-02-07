@@ -155,11 +155,11 @@ but rub <source> <target>
 | `but pr new <branch> -F file.txt` | PR message from file: first line = title, rest = body |
 | `but pr template` | Configure default PR template |
 
-**Push + PR workflow:**
-1. Push branch to remote: `but push feature-auth`
-2. Create PR: `but pr new feature-auth`
-3. Or push all unpushed branches: `but push` (non-interactive)
-4. Requires prior `but config forge auth` for first-time setup
+**PR workflow:**
+- `but pr new` handles both pushing and PR creation in one step — no separate `but push` needed
+- For stacks, create PRs bottom-to-top: `but pr new base` then `but pr new child`
+- Use `but push` only to update already-created PRs (e.g., after review feedback)
+- Requires prior `but config forge auth` for first-time setup
 
 **Non-interactive PR creation** (for agents and automation):
 
@@ -408,7 +408,7 @@ but commit <branch> -m "msg" -p h1,h3
 | **Branch Creation** | `gt create -am "msg"` | `but branch new name [--anchor parent]` |
 | **Committing** | `gt modify -cam "msg"` | `but commit -m "msg"` |
 | **Stack Navigation** | ✓ `gt up`/`gt down` | ✗ No CLI equivalent (all applied) |
-| **PR Submission** | ✓ `gt submit --stack` | ✓ `but push` + `but pr new` |
+| **PR Submission** | ✓ `gt submit --stack` | ✓ `but pr new` (pushes + creates PR) |
 | **JSON Output** | Limited | ✓ Comprehensive via `--json` per command |
 | **Multi-Feature Work** | Switch branches | All in one workspace |
 | **CLI Completeness** | ✓ Full automation | ✓ Full automation (as of 0.19.0) |

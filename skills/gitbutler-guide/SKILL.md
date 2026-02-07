@@ -2,7 +2,7 @@
 name: gitbutler-guide
 description: Use when working with GitButler — virtual branches, stacks, completing branches, parallel development, post-hoc commit organization, multi-agent coordination, or when "but" CLI commands, "virtual branch", "stack", "stacked branches", "anchor", "--anchor", "create dependent branch", "break feature into PRs", "complete a branch", "merge to main", "finish my feature", "ship this branch", "assign file to branch", "organize commits", "--gitbutler", or "--but" are mentioned. Comprehensive guide for the full GitButler branch management lifecycle.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: Matt Galligan <mg@outfitter.dev>
   category: version-control
   related-skills:
@@ -50,6 +50,8 @@ NOT for: projects using Graphite (incompatible models), simple linear workflows 
 | Stage file to branch | `but stage <file-id> <branch>` | `git add` |
 | Amend file into commit | `but amend <file-id> <commit>` | `git commit --amend` |
 | Commit specific files | `but commit <branch> -m "msg" -p <id>,<id>` | `git commit` |
+| Publish branch + create PR | `but pr new <branch>` | `but push` then `but pr new` |
+| Update existing PR | `but push` | `but pr new` (only for first publish) |
 | Discard changes | `but discard <id>` | `git checkout -- <file>` |
 | Move commit | `but rub <sha> <branch>` | `git cherry-pick` |
 | Squash commits | `but squash <branch>` | `git rebase -i` |
@@ -244,21 +246,32 @@ but show dependent-feature --json | jq '.commits[] | .id'
 
 ## Publishing & PRs
 
-### Push and Create PRs
+### Creating PRs
+
+`but pr new` is the primary command for publishing — it handles both pushing and PR creation in one step. No separate `but push` needed.
 
 ```bash
-# Push all unpushed branches at once
-but push
+# Create PR (pushes automatically + creates PR)
+but pr new base-feature -m "feat: base feature"
 
-# Preview before pushing
-but push --dry-run
-
-# Create PRs (bottom-to-top for stacks)
+# For stacks: bottom-to-top, one command per level
 but pr new base-feature -m "feat: base feature"
 but pr new child-feature -m "feat: child feature"
 ```
 
-`but push` pushes all branches with unpushed commits. `but pr new` auto-pushes and sets correct base branches for stacked PRs.
+`but pr new` auto-pushes the branch and sets correct base branches for stacked PRs. GitButler figures out the right base from anchor relationships.
+
+### Push Without PR
+
+Use `but push` only when you want to push without creating a PR (e.g., updating an already-created PR after review feedback):
+
+```bash
+# Preview before pushing
+but push --dry-run
+
+# Push updated branches (after absorb, review fixes, etc.)
+but push
+```
 
 ### Non-Interactive PR Creation
 
@@ -324,8 +337,7 @@ but oplog snapshot --message "Before publishing feature-auth"
 # 3. Authenticate with forge (one-time)
 but config forge auth
 
-# 4. Push branch and create PR
-but push feature-auth
+# 4. Create PR (pushes automatically + creates PR in one step)
 but pr new feature-auth
 
 # 5. Review and merge PR on GitHub
@@ -362,7 +374,7 @@ but absorb --dry-run
 # 3. Execute — changes route to correct commits based on file context
 but absorb
 
-# 4. Push all updated branches
+# 4. Push all updated branches (no new PRs needed — they already exist)
 but push
 ```
 
@@ -447,6 +459,8 @@ See `references/reorganization.md` for detailed examples and recovery procedures
 <rules>
 
 ALWAYS:
+- Use `but pr new` (not `but push`) to publish branches — it pushes and creates the PR in one step
+- Use `but push` only to update branches that already have PRs (e.g., after absorb or review fixes)
 - Use `but` for all work within virtual branches
 - Use `git` only for integrating completed work into main
 - Check CLI IDs with `but status` before committing or staging
@@ -463,6 +477,7 @@ ALWAYS:
 - Delete empty/merged branches after cleanup
 
 NEVER:
+- Run `but push` before `but pr new` — `but pr new` already handles pushing; a separate push is redundant
 - Use `git commit` on virtual branches — breaks GitButler state
 - Use `git add` — GitButler manages index
 - Use `git checkout` on virtual branches — no checkout needed

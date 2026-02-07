@@ -125,7 +125,9 @@ but commit <target-branch> -o -m "fix: add missing validation"
 
 ## Stack Publishing Workflow
 
-End-to-end pattern for submitting a complete stack as PRs:
+End-to-end pattern for submitting a complete stack as PRs.
+
+`but pr new` handles both pushing and PR creation — no separate `but push` needed. Create PRs bottom-to-top so GitButler auto-sets the correct base branch from anchors.
 
 ```bash
 # 1. Create stack
@@ -139,13 +141,7 @@ but branch new frontend -a api-endpoints
 # 2. Verify stack structure
 but status
 
-# 3. Preview what will be pushed
-but push --dry-run
-
-# 4. Push all branches
-but push
-
-# 5. Create PRs (bottom-to-top, non-interactive)
+# 3. Create PRs bottom-to-top (pushes automatically)
 but pr new db-migration -m "feat: add user tables
 
 Migration adds users and sessions tables."
@@ -158,8 +154,8 @@ but pr new frontend -m "feat: add user dashboard
 
 UI for user management. Depends on api-endpoints."
 
-# 6. After review feedback, use absorb to update
+# 4. After review feedback, use absorb to update
 # (make fixes)
 but absorb
-but push
+but push  # Updates already-created PRs (no new PRs needed)
 ```

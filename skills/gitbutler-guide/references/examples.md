@@ -203,16 +203,13 @@ but status
 
 ### Submit Stack as PRs
 
+`but pr new` handles both pushing and PR creation — no separate `but push` needed. Create PRs bottom-to-top so GitButler sets correct base branches from anchors.
+
 ```bash
-# Using but CLI (preferred)
-but push refactor-database
-but pr new refactor-database
-
-but push feature-new-model
-but pr new feature-new-model
-
-but push test-new-model
-but pr new test-new-model
+# Using but CLI (preferred) — bottom-to-top
+but pr new refactor-database          # PR against main
+but pr new feature-new-model          # PR against refactor-database (auto)
+but pr new test-new-model             # PR against feature-new-model (auto)
 ```
 
 ```bash
@@ -345,16 +342,18 @@ but absorb --dry-run
 but absorb --new
 ```
 
-### Push with Preview
+### Push with Preview (For Updating Existing PRs)
+
+Use `but push` to update branches that already have PRs. For first-time publishing, use `but pr new` instead.
 
 ```bash
 # See what would be pushed without pushing
 but push --dry-run
 
-# Push a specific branch
+# Push a specific branch (updates existing PR)
 but push feature-auth
 
-# Push all unpushed branches
+# Push all branches with unpushed commits
 but push
 ```
 
