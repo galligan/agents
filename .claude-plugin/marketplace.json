@@ -9,11 +9,10 @@
     "version": "1.0.0"
   },
   "repository": "https://github.com/galligan/agents",
-  "strict": false,
   "plugins": [
     {
       "name": "gitbutler",
-      "source": "./",
+      "source": "./plugins/gitbutler",
       "version": "1.0.0",
       "description": "GitButler virtual branches, stacks, multi-agent coordination, and branch lifecycle management.",
       "author": {

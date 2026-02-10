@@ -1,0 +1,18 @@
+{
+  "name": "gitbutler",
+  "description": "GitButler virtual branches, stacks, multi-agent coordination, and branch lifecycle management.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Matt Galligan",
+    "email": "mg@outfitter.dev"
+  },
+  "repository": "https://github.com/galligan/agents",
+  "license": "MIT",
+  "keywords": [
+    "gitbutler",
+    "virtual-branches",
+    "stacks",
+    "multi-agent",
+    "version-control"
+  ]
+}
