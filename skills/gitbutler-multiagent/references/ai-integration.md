@@ -124,7 +124,7 @@ Agents share branch, coordinate via file-based status:
 
 ```bash
 # File-based coordination
-but status > /tmp/agent-$(whoami)-status.txt
+but status --json > /tmp/agent-$(whoami)-status.txt
 
 # Other agents check before modifying
 ```
@@ -176,7 +176,7 @@ but rub <commit> <other-branch>
 
 ```bash
 # Broadcast status
-but status > /tmp/agent-status-$(hostname)-$(date +%s).txt
+but status --json > /tmp/agent-status-$(hostname)-$(date +%s).txt
 
 # Other agents poll status files
 ```
@@ -210,7 +210,7 @@ Add to agent system prompt:
 1. NEVER use `git commit` - use `but commit`
 2. NEVER use `git add` - GitButler manages staging
 3. NEVER use `git checkout` - all branches always applied
-4. ALWAYS check file IDs with `but status` before `but rub`
+4. ALWAYS check file IDs with `but status --json` before `but rub`
 5. ALWAYS snapshot before risky operations: `but oplog snapshot`
 6. Return to workspace after git ops: `git checkout gitbutler/workspace`
 
@@ -241,7 +241,7 @@ Commit your work: `but commit {agent-branch-name} -m "your message"`
 
 ```bash
 # Check oplog
-but oplog
+but oplog --json
 
 # Undo if recent
 but undo

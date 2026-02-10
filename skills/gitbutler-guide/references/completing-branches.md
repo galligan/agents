@@ -10,8 +10,8 @@ When you want to merge locally without a PR:
 
 ```bash
 # 1. Verify branch state
-but status
-but show feature-auth
+but status --json
+but show feature-auth --json
 
 # 2. Create snapshot
 but oplog snapshot --message "Before integrating feature-auth"
@@ -60,7 +60,45 @@ git checkout gitbutler/workspace
 
 ## Stacked Branches (Bottom-Up)
 
-Must merge in order: base → dependent → final.
+Must merge in order: base → dependent → final. **One at a time, waiting between each.**
+
+### Squash Merge via PRs (Most Common)
+
+Most GitHub repos enforce squash merges. This rewrites each branch into a single commit, which invalidates the base branch for the next PR in the stack. You **must** wait, pull, and push between each merge.
+
+```bash
+# 1. Merge bottom PR
+gh pr merge <bottom-pr-number> --squash --delete-branch
+
+# 2. CRITICAL: Wait for main to update, then rebase remaining stack
+but pull     # Rebases remaining branches onto the new squashed commit
+but push     # Updates remote branches so GitHub sees them as mergeable
+
+# 3. Verify the next PR is mergeable
+gh pr view <next-pr-number> --json mergeable --jq '.mergeable'
+# Should be "MERGEABLE" — if "UNKNOWN", wait a moment and retry
+
+# 4. Merge next PR
+gh pr merge <next-pr-number> --squash --delete-branch
+
+# 5. Repeat steps 2-4 for each remaining stack level
+
+# 6. Final cleanup
+but pull
+but unapply <last-branch>  # Or but branch delete if possible
+```
+
+**What goes wrong if you skip the wait:**
+
+| Step skipped | Consequence |
+|-------------|-------------|
+| `but pull` after merge | Next PR's base branch diverges from main — GitHub marks it "CONFLICTING" |
+| `but push` after pull | Remote branches still point at old commits — GitHub can't merge cleanly |
+| Both | GitHub auto-closes the next PR when the base branch is deleted. **Cannot reopen** — must recreate with `gh pr create --base main` |
+
+### Direct Merge (No Squash)
+
+When merge commits are allowed, history isn't rewritten and stacks are simpler:
 
 ```bash
 # 1. Merge base branch first
@@ -139,5 +177,5 @@ but branch delete feature-auth
 git push origin --delete feature-auth
 
 # Verify workspace is clean
-but status  # Should show remaining active branches only
+but status --json  # Should show remaining active branches only
 ```

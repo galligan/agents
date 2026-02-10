@@ -89,7 +89,7 @@ but absorb --dry-run
 but absorb
 
 # 4. Verify
-but status    # All clean, changes routed correctly
+but status --json    # All clean, changes routed correctly
 
 # 5. Push all updated branches
 but push
@@ -139,7 +139,7 @@ but branch new frontend -a api-endpoints
 # ... implement, commit ...
 
 # 2. Verify stack structure
-but status
+but status --json
 
 # 3. Create PRs bottom-to-top (pushes automatically)
 but pr new db-migration -m "feat: add user tables
