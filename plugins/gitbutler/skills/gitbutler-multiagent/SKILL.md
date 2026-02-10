@@ -213,19 +213,24 @@ Makes ownership immediately visible in `but status --json`.
 
 | Platform | Commands |
 |----------|----------|
-| **Claude Code** | `but claude pre-tool`, `but claude post-tool`, `but claude stop` |
+| **Claude Code (plugin runtime)** | `plugins/gitbutler/hooks/hooks.json` + `plugins/gitbutler/hooks/scripts/*.sh` |
 | **Cursor** | `but cursor after-edit`, `but cursor stop` |
 
-Example Claude Code hooks config (`.claude/hooks.json`):
+Example plugin hook config (from plugin root):
 
 ```json
 {
   "hooks": {
-    "PostToolUse": [{"matcher": "Edit|Write", "hooks": [{"type": "command", "command": "but claude post-tool"}]}],
-    "Stop": [{"matcher": "", "hooks": [{"type": "command", "command": "but claude stop"}]}]
+    "PreToolUse": [{"matcher": "Bash|Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-tool.sh"}]}],
+    "PostToolUse": [{"matcher": "Write|Edit|MultiEdit", "hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-tool.sh"}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/stop.sh"}]}]
   }
 }
 ```
+
+Coordination mode is selected via skills:
+- `gitbutler-coordination-isolated`
+- `gitbutler-coordination-shared`
 
 ### 3. MCP Server
 

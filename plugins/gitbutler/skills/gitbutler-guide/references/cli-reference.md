@@ -235,13 +235,14 @@ but pr new child-feature -m "feat: child feature"
 
 ### AI Integration Commands
 
-**Claude Code Hooks:**
+**Claude Code Hooks (plugin runtime):**
 
 | Command | Purpose |
 |---------|---------|
-| `but claude pre-tool` | Run before code generation/editing |
-| `but claude post-tool` | Run after editing completes |
-| `but claude stop` | Run when agent session ends |
+| `plugins/gitbutler/hooks/scripts/pre-tool.sh` | Run before guarded tool calls |
+| `plugins/gitbutler/hooks/scripts/post-tool.sh` | Run after write/edit tool calls |
+| `plugins/gitbutler/hooks/scripts/stop.sh` | Run when the main session stops |
+| `plugins/gitbutler/hooks/hooks.json` | Baseline plugin hook configuration |
 
 **Cursor Hooks:**
 
