@@ -122,7 +122,33 @@ but commit shared-feature -m "feat: collaborative implementation"
 
 Use with Workspace Rules (`but mark`) for auto-assignment to branches.
 
-### Pattern 6: Exploratory Development
+### Pattern 6: Pre-Created Stack (Multi-Agent)
+
+Orchestrator pre-creates the stack structure, then agents target specific branches:
+
+```bash
+# Orchestrator: set up stack structure
+but branch new db-migration
+but branch new api-endpoints --anchor db-migration
+but branch new frontend-views --anchor api-endpoints
+
+# Agent A: targets db-migration (use -p, NOT but stage)
+but commit db-migration -m "feat: add user tables" -p m6,p9
+
+# Agent B: targets api-endpoints
+but commit api-endpoints -m "feat: add REST endpoints" -p q3,r7
+
+# Agent C: targets frontend-views
+but commit frontend-views -m "feat: add user views" -p s1,t4
+
+# All agents work in parallel, same workspace, no checkout
+```
+
+**Critical:** Use `but commit <branch> -p <id>` to target specific branches in the stack. Do NOT use `but stage` — staging is per-stack, not per-branch. `but stage` silently routes to the stack head when targeting empty branches. See [gitbutlerapp/gitbutler#12293](https://github.com/gitbutlerapp/gitbutler/issues/12293).
+
+Once each branch has at least one commit, `but stage` and `but absorb` work correctly for subsequent changes.
+
+### Pattern 7: Exploratory Development
 
 Compare multiple approaches in parallel:
 
@@ -143,7 +169,7 @@ but commit perf-strategy-b -m "perf: try batching approach"
 but rub <winning-commit> perf-parent
 ```
 
-### Pattern 7: Emergency Hotfix (Feature Work Continues)
+### Pattern 8: Emergency Hotfix (Feature Work Continues)
 
 Ship a fix without disturbing ongoing multi-agent work:
 
@@ -293,12 +319,14 @@ but status --json > /tmp/agent-$(whoami)-status.txt
 
 ALWAYS:
 - Use unique branch names per agent: `<agent>-<type>-<desc>`
+- Use `but commit <branch> -p <id>` when targeting branches in a stack — especially empty ones
 - Assign files immediately after creating: `but rub <id> <branch>`
 - Snapshot before coordinated operations
 - Broadcast status to other agents when completing work
 - Check for 🔒 locked files before modifying
 
 NEVER:
+- Use `but stage` to target empty branches in a stack — staging is per-stack and silently routes to stack head; use `-p` flag on commit instead
 - Use `git commit` — breaks GitButler state
 - Let files sit in "Unassigned Changes" — assign immediately
 - Modify files locked to other branches
@@ -312,6 +340,7 @@ NEVER:
 |---------|-------|----------|
 | Agent commit "orphaned" | Used `git commit` | Find with `git reflog`, recover |
 | Files in wrong branch | Forgot assignment | `but rub <id> <correct-branch>` |
+| `but stage` routes to stack head | Staging is per-stack; empty branches share staging area | Use `but commit <branch> -p <id>` instead ([#12293](https://github.com/gitbutlerapp/gitbutler/issues/12293)) |
 | Conflicting edits | Overlapping files | Reassign hunks to different branches |
 | Lost agent work | Branch deleted | `but undo` or restore from oplog |
 

@@ -87,7 +87,7 @@ but commit feature-auth -m "feat: add authentication" -p m6,p9
 4. **Commit**: `but commit <branch> -m "message" -p <id>,<id>` (specific files by ID)
 5. **Repeat**: Continue with other features in parallel
 
-**Alternatives**: Use `but stage <id> <branch>` to pre-assign files, then `but commit <branch> -o` to commit staged only. Or use `but rub` for any source→target operation.
+**Alternatives**: Use `but stage <id> <branch>` to pre-assign files, then `but commit <branch> -o` to commit staged only. Or use `but rub` for any source→target operation. **Caveat**: `but stage` doesn't work correctly for empty branches in a stack — use `-p` instead.
 
 ## The Power of `but rub`
 
@@ -222,6 +222,8 @@ but branch new grandchild-feature --anchor child-feature
 ```bash
 but branch new child -a parent
 ```
+
+**Known limitation — staging in stacks:** Staging is per-stack, not per-branch. `but stage <file> <branch>` silently routes to the stack head when the target branch has no commits. Use `but commit <branch> -m "msg" -p <id>` instead — the `-p` flag correctly targets any branch, even empty ones. See [gitbutlerapp/gitbutler#12293](https://github.com/gitbutlerapp/gitbutler/issues/12293).
 
 See `references/patterns.md` for detailed stack patterns (feature dependency, refactoring, deep stacks).
 
@@ -493,7 +495,7 @@ ALWAYS:
 - Use `git` only for integrating completed work into main
 - Use `--json` on all inspection commands (`but status`, `but show`, `but diff`, `but oplog`)
 - Check CLI IDs with `but status --json` before committing or staging
-- Commit specific files with `-p <id>,<id>` or pre-assign with `but stage`
+- Commit specific files with `-p <id>,<id>` — preferred over `but stage` for stacks (staging is per-stack, not per-branch)
 - Create stacks with `--anchor` from the start
 - Create snapshot before integration or reorganization: `but oplog snapshot --message "..."`
 - Merge stacks bottom-to-top (base first, dependents after)
@@ -506,6 +508,7 @@ ALWAYS:
 - Delete empty/merged branches after cleanup
 
 NEVER:
+- Use `but stage` to target empty branches in a stack — staging is per-stack and silently routes to the stack head; use `but commit <branch> -p <id>` instead
 - Batch-merge stacked PRs — squash merges rewrite history; merge one, `but pull`, `but push`, then merge the next
 - Run `but push` before `but pr new` — `but pr new` already handles pushing; a separate push is redundant
 - Use `git commit` on virtual branches — breaks GitButler state
@@ -534,6 +537,7 @@ NEVER:
 | Symptom | Cause | Solution |
 |---------|-------|----------|
 | Files not committing | Not assigned to branch | Use `-p <id>` or `but stage <id> <branch>` |
+| `but stage` routes to wrong branch | Staging is per-stack; empty branches share staging area | Use `but commit <branch> -p <id>` to target empty branches directly ([#12293](https://github.com/gitbutlerapp/gitbutler/issues/12293)) |
 | Broken pipe panic | Output piped directly | Capture to variable first |
 | Filename with dash fails | Interpreted as range | Use file ID from `but status --json` |
 | Branch not visible | Not applied | `but apply <branch>` |
@@ -600,8 +604,8 @@ git merge --no-ff feature-auth -m "Merge branch"
 - Descriptive names indicating stack relationship
 
 **File assignment discipline:**
-- Best: Commit directly with `-p <id>,<id>`
-- Alternative: `but stage` immediately if committing later
+- Best: Commit directly with `-p <id>,<id>` — works for all branches including empty ones in stacks
+- Alternative: `but stage` for branches that already have commits (staging is per-stack — empty branches route to stack head)
 - Use marks for focused work sessions
 
 <references>
