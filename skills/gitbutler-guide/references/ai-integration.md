@@ -191,7 +191,7 @@ When configuring agents to work with GitButler:
 2. **Never use `git add`** - GitButler manages index
 3. **Never use `git checkout`** - All branches always applied
 4. **Always return to workspace** after any git operations: `git checkout gitbutler/workspace`
-5. **Use `but status` to find file IDs** before using `but rub`
+5. **Use `but status --json` to find file IDs** before using `but rub`
 
 ---
 

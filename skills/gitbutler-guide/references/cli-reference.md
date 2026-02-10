@@ -28,13 +28,13 @@ but --json status    # Global flag (also works)
 
 | Command | Description |
 |---------|-------------|
-| `but status` | View uncommitted changes and file assignments |
-| `but status -f` | Show modified files in each commit |
-| `but status -v, --verbose` | Show verbose output with commit author and timestamp |
-| `but show <id>` | Show detailed info about a commit or branch |
-| `but diff` | Show diff of all uncommitted changes |
-| `but diff <id>` | Show diff for a specific entity (file, branch, commit) |
-| `but oplog` | View operations history (snapshots) |
+| `but status --json` | View uncommitted changes and file assignments |
+| `but status -f --json` | Show modified files in each commit |
+| `but status -v --json` | Show verbose output with commit author and timestamp |
+| `but show <id> --json` | Show detailed info about a commit or branch |
+| `but diff --json` | Show diff of all uncommitted changes |
+| `but diff <id> --json` | Show diff for a specific entity (file, branch, commit) |
+| `but oplog --json` | View operations history (snapshots) |
 | `but gui` | Open GitButler GUI for current repo |
 
 **Status Output Example:**
@@ -72,8 +72,8 @@ but --json status    # Global flag (also works)
 | `but branch new <name> -a <parent>` | Short form for stacked branch |
 | `but branch delete <name>` | Soft delete (requires confirmation) |
 | `but branch delete <name> --force` | Force delete |
-| `but branch list` | List all branches |
-| `but branch list --local` | Only local branches |
+| `but branch list --json` | List all branches |
+| `but branch list --local --json` | Only local branches |
 | `but unapply <name>` | Remove branch from workspace (keeps in Git) |
 | `but apply <name>` | Apply an unapplied branch to workspace |
 | `but pick <source> [branch]` | Cherry-pick commit from unapplied branch |
@@ -189,7 +189,7 @@ but pr new child-feature -m "feat: child feature"
 
 | Command | Description |
 |---------|-------------|
-| `but oplog` | View operation history |
+| `but oplog --json` | View operation history |
 | `but undo` | Undo last operation |
 | `but oplog restore <snapshot-id>` | Restore to specific snapshot |
 | `but oplog snapshot --message "msg"` | Create manual snapshot |
@@ -204,7 +204,7 @@ but pr new child-feature -m "feat: child feature"
 | `but resolve cancel` | Cancel resolution and return to workspace |
 
 **Workflow:**
-1. `but status` shows conflicted commits
+1. `but status --json` shows conflicted commits
 2. `but resolve <commit-id>` to enter resolution mode
 3. Fix conflict markers in your editor
 4. `but resolve status` to check remaining conflicts
@@ -263,14 +263,10 @@ but pr new child-feature -m "feat: child feature"
 ### `but status --json`
 
 Key fields:
+- `cliId` — CLI ID for each object (stacks, branches, commits, files)
 - `path` — Filename as ASCII array (requires decoding)
 - `assignments` — Hunk-level file assignments
 - `stackId` — Which stack this belongs to (null if unassigned)
-
-**Limitations:**
-- File IDs (`m6`, `g4`) not exposed in JSON
-- Paths are ASCII arrays, not strings
-- Parse text output for IDs
 
 ### `but show <branch> --json`
 
@@ -317,11 +313,9 @@ Every object in the GitButler workspace gets a short, human-readable identifier:
 | Files | `a1`, `m6`, `p9` | `but commit -p a1,m6` |
 | Hunks | `h1`, `h2`, `h3` | `but commit -p h1` (single hunk) |
 
-IDs are unique within the current workspace context and shown by `but status`.
+IDs are unique within the current workspace context and shown by `but status --json` (as `cliId` fields).
 
 **Why?** Git SHAs are 40 chars. CLI IDs are 2-3 chars — designed for fast terminal workflows.
-
-**Note:** CLI IDs are displayed in text output but not exposed in JSON. Use text output to get IDs, JSON for structured data.
 
 ### Dependency Tracking
 
@@ -393,7 +387,7 @@ but commit <branch> -m "msg" -p h1,h3
 **When to use:** Large files with changes belonging to different logical commits. Stage the auth-related hunks to one commit, the refactoring hunks to another.
 
 **Getting IDs:**
-- **File IDs:** From `but status` — commit entire files
+- **File IDs:** From `but status --json` — commit entire files
 - **Hunk IDs:** From `but diff --json` — commit individual hunks for fine-grained control
 
 ---
@@ -438,7 +432,7 @@ but commit <branch> -m "msg" -p h1,h3
 | Symptom | Cause | Solution |
 |---------|-------|----------|
 | Broken pipe panic | Output piped directly | Capture to variable first |
-| Filename with dash fails | Interpreted as range | Use file ID from `but status` |
+| Filename with dash fails | Interpreted as range | Use file ID from `but status --json` |
 | Branch not visible | Not applied | `but apply <branch>` or `but pick <commit>` |
 | Files not committing | Not assigned | `but rub <file-id> <branch>` |
 | Mixed git/but broke state | Used git commands | `but pull` or `but setup` |
@@ -452,10 +446,10 @@ but commit <branch> -m "msg" -p h1,h3
 **Problem:** `but status` panics when output consumed partially.
 
 ```bash
-✗ but status | head -5  # Panic!
+✗ but status --json | head -5  # Panic!
 
-✓ status_output=$(but status)
-  echo "$status_output" | head -5
+✓ status_output=$(but status --json)
+  echo "$status_output" | jq '.stacks'
 ```
 
 #### Filename Parsing Issues
@@ -465,7 +459,7 @@ but commit <branch> -m "msg" -p h1,h3
 ```bash
 ✗ but rub file-with-dashes.md branch  # Fails
 
-✓ but rub m6 branch  # Use file ID from but status
+✓ but rub m6 branch  # Use file ID from but status --json
 ```
 
 #### Integration Branch Conflicts
@@ -484,7 +478,7 @@ but commit <branch> -m "msg" -p h1,h3
 
 ```bash
 # Check assignments
-but status
+but status --json
 
 # Assign files
 but rub <file-id> <branch>
@@ -528,7 +522,7 @@ git log <head_sha>
 
 ```bash
 # Check oplog for deletion
-but oplog
+but oplog --json
 
 # Undo deletion (if last operation)
 but undo

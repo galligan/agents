@@ -171,7 +171,7 @@ Examples:
 - codex-refactor-database-layer
 ```
 
-Makes ownership immediately visible in `but status`.
+Makes ownership immediately visible in `but status --json`.
 
 ## AI Integration Methods
 
@@ -240,7 +240,7 @@ Single command handles four critical multi-agent operations:
 
 ```bash
 # File-based coordination
-but status > /tmp/agent-$(whoami)-status.txt
+but status --json > /tmp/agent-$(whoami)-status.txt
 
 # Or use Linear/GitHub comments
 # "[AGENT-A] Completed auth module, committed to claude-auth-feature"
@@ -322,7 +322,7 @@ NEVER:
 git reflog
 
 # Recover agent work
-but oplog
+but oplog --json
 but undo
 
 # Extract from snapshot

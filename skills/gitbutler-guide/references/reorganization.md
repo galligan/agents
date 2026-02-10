@@ -42,7 +42,7 @@ but squash <newer-commit> <older-commit>
 Relocate a commit to the correct branch in the stack.
 
 ```bash
-# Use commit ID from `but status` or `but show`
+# Use commit ID from `but status --json` or `but show --json`
 but rub <commit-id> correct-branch
 ```
 
@@ -53,7 +53,7 @@ Extract part of a branch into a new stack level.
 ```bash
 # Original has multiple features
 but branch new second-feature --anchor original-branch
-# Use commit ID from `but show original-branch`
+# Use commit ID from `but show original-branch --json`
 but rub <commit-id> second-feature
 ```
 

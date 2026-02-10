@@ -46,7 +46,7 @@ NOT for: projects using Graphite (incompatible models), simple linear workflows 
 | ---- | ---- | -------- |
 | Initialize workspace | `but setup` | manual setup |
 | Create branch | `but branch new name` | `git checkout -b name` |
-| View changes | `but status` | `git status` |
+| View changes | `but status --json` | `git status` |
 | Stage file to branch | `but stage <file-id> <branch>` | `git add` |
 | Amend file into commit | `but amend <file-id> <commit>` | `git commit --amend` |
 | Commit specific files | `but commit <branch> -m "msg" -p <id>,<id>` | `git commit` |
@@ -70,7 +70,7 @@ but setup
 but branch new feature-auth
 
 # Make changes, check status for CLI IDs
-but status
+but status --json
 # ╭┄00 [Unassigned Changes]
 # │   m6 A src/auth.ts
 # │   p9 A src/auth.test.ts
@@ -83,7 +83,7 @@ but commit feature-auth -m "feat: add authentication" -p m6,p9
 
 1. **Create**: `but branch new <name>`
 2. **Edit**: Make changes in working directory
-3. **Check**: `but status` to see CLI IDs
+3. **Check**: `but status --json` to see CLI IDs
 4. **Commit**: `but commit <branch> -m "message" -p <id>,<id>` (specific files by ID)
 5. **Repeat**: Continue with other features in parallel
 
@@ -118,9 +118,9 @@ For common operations, prefer the self-documenting aliases:
 | Command | Purpose |
 |---------|---------|
 | `but setup` | Initialize GitButler in repository |
-| `but status` | View changes and CLI IDs |
-| `but diff [id]` | Show diff; use `--json` for hunk IDs |
-| `but show <id>` | Inspect a commit or branch in detail |
+| `but status --json` | View workspace state, changes, and CLI IDs |
+| `but diff --json` | Show diff with hunk IDs |
+| `but show <id> --json` | Inspect a commit or branch in detail |
 | `but branch new <name>` | Create virtual branch |
 | `but branch new <name> --anchor <parent>` | Create stacked branch |
 | `but apply <branch>` / `but unapply <branch>` | Activate/deactivate branch in workspace |
@@ -143,12 +143,12 @@ For common operations, prefer the self-documenting aliases:
 | `but config forge auth` | Authenticate with GitHub (OAuth) |
 | `but mark <id>` | Auto-route new changes to branch or commit |
 | `but unmark` | Remove all marks |
-| `but oplog` | Show operation history |
+| `but oplog --json` | Show operation history |
 | `but undo` | Undo last operation |
 | `but oplog snapshot --message "msg"` | Create manual snapshot |
 | `but pull` | Update workspace with latest base |
 
-**JSON output**: Use `--json` or `-j` flag on any command: `but status --json`
+**JSON output**: Always use `--json` or `-j` on inspection commands: `but status --json`, `but show <id> --json`, `but diff --json`. CLI IDs are included in JSON as `cliId` fields.
 
 For the complete CLI reference with flags, JSON schemas, and detailed options, see `references/cli-reference.md`.
 
@@ -162,7 +162,7 @@ but branch new feature-b
 # Edit files for both (same workspace!)
 
 # Check status for IDs
-but status
+but status --json
 
 # Commit specific files to each branch
 but commit feature-a -m "feat: implement feature A" -p m6
@@ -231,16 +231,16 @@ Virtual branches don't need checkout — all branches active simultaneously.
 
 ```bash
 # View full stack structure
-but status
+but status --json
 
 # Work on any branch directly (no checkout needed)
 but commit base-feature -m "update base"
 but commit dependent-feature -m "update dependent"
 
 # Inspect a specific branch
-but show dependent-feature
+but show dependent-feature --json
 
-# JSON for programmatic analysis
+# Extract commit IDs
 but show dependent-feature --json | jq '.commits[] | .id'
 ```
 
@@ -319,7 +319,7 @@ When a branch is ready to ship, follow this workflow.
 | Check | Command | Expected |
 |-------|---------|----------|
 | GitButler running | `but --version` | Version output |
-| Work committed | `but status` | Committed changes, no unassigned files |
+| Work committed | `but status --json` | Committed changes, no unassigned files |
 | Tests passing | `bun test` (or project equivalent) | All green |
 | Base updated | `but pull` | Up to date with main |
 | Snapshot created | `but oplog snapshot -m "Before integrating..."` | Snapshot ID returned |
@@ -328,8 +328,8 @@ When a branch is ready to ship, follow this workflow.
 
 ```bash
 # 1. Verify branch state
-but status
-but show feature-auth
+but status --json
+but show feature-auth --json
 
 # 2. Create snapshot
 but oplog snapshot --message "Before publishing feature-auth"
@@ -349,7 +349,35 @@ but branch delete feature-auth
 
 ### Stacked Branches (Bottom-to-Top)
 
-Must merge in order: base → dependent → final.
+Must merge in order: base → dependent → final. **One at a time, waiting between each.**
+
+#### Squash Merge (Most Common)
+
+When your repo uses squash merges (GitHub default for most teams), each merge rewrites history. The remaining stack must rebase onto the new squashed commit before the next merge.
+
+```bash
+# 1. Merge bottom PR (via GitHub UI or CLI)
+gh pr merge <bottom-pr> --squash --delete-branch
+
+# 2. WAIT — pull to rebase remaining stack onto new main
+but pull
+
+# 3. Push rebased branches to update remote
+but push
+
+# 4. Verify next PR is mergeable, then merge it
+gh pr merge <next-pr> --squash --delete-branch
+
+# 5. Repeat: pull → push → verify → merge for each level
+```
+
+**Why waiting matters:** Squash merges rewrite commits into a single new SHA. This makes the next PR's base branch (the old branch) diverge from main. If you merge the next PR immediately, GitHub auto-closes it as "conflicting" because its base branch was deleted. The PR **cannot be reopened** — you must recreate it with `gh pr create --base main`.
+
+The `but pull` step rebases the remaining stack cleanly onto the new squashed commit, and `but push` updates the remote branches so GitHub sees them as mergeable.
+
+#### Merge Commit (When Available)
+
+If your repo allows merge commits, stacks are simpler — history isn't rewritten:
 
 ```bash
 # 1. Merge base branch first (via PR or direct)
@@ -429,7 +457,7 @@ GitButler resolves conflicts **per-commit** during rebase (unlike Git's all-or-n
 but pull
 
 # Check which commits have conflicts
-but status
+but status --json
 
 # Enter resolution mode for a specific commit
 but resolve <commit-id>
@@ -463,7 +491,8 @@ ALWAYS:
 - Use `but push` only to update branches that already have PRs (e.g., after absorb or review fixes)
 - Use `but` for all work within virtual branches
 - Use `git` only for integrating completed work into main
-- Check CLI IDs with `but status` before committing or staging
+- Use `--json` on all inspection commands (`but status`, `but show`, `but diff`, `but oplog`)
+- Check CLI IDs with `but status --json` before committing or staging
 - Commit specific files with `-p <id>,<id>` or pre-assign with `but stage`
 - Create stacks with `--anchor` from the start
 - Create snapshot before integration or reorganization: `but oplog snapshot --message "..."`
@@ -477,6 +506,7 @@ ALWAYS:
 - Delete empty/merged branches after cleanup
 
 NEVER:
+- Batch-merge stacked PRs — squash merges rewrite history; merge one, `but pull`, `but push`, then merge the next
 - Run `but push` before `but pr new` — `but pr new` already handles pushing; a separate push is redundant
 - Use `git commit` on virtual branches — breaks GitButler state
 - Use `git add` — GitButler manages index
@@ -493,8 +523,8 @@ NEVER:
 - Pipe `but status` directly — causes panic; capture output first:
 
   ```bash
-  status_output=$(but status)
-  echo "$status_output" | head -5
+  status_output=$(but status --json)
+  echo "$status_output" | jq '.stacks'
   ```
 
 </rules>
@@ -505,11 +535,12 @@ NEVER:
 |---------|-------|----------|
 | Files not committing | Not assigned to branch | Use `-p <id>` or `but stage <id> <branch>` |
 | Broken pipe panic | Output piped directly | Capture to variable first |
-| Filename with dash fails | Interpreted as range | Use file ID from `but status` |
+| Filename with dash fails | Interpreted as range | Use file ID from `but status --json` |
 | Branch not visible | Not applied | `but apply <branch>` |
-| Stack not showing in `but status` | Missing `--anchor` | Recreate with correct anchor |
+| Stack not showing in `but status --json` | Missing `--anchor` | Recreate with correct anchor |
 | Commits in wrong stack level | Wrong branch targeted | `but rub <sha> correct-branch` |
 | Can't merge middle of stack | Wrong order | Merge bottom-to-top only |
+| Stacked PR auto-closed after squash merge | Base branch deleted by squash | `but pull` → `but push` → recreate PR with `gh pr create --base main` |
 | Merge conflicts | Diverged from main | Resolve conflicts, stage, commit |
 | Push rejected | Main moved ahead | `git pull`, resolve, push |
 | Branch not found | Wrong ref path | Use `refs/gitbutler/<name>` |
@@ -529,7 +560,7 @@ but undo
 but oplog restore <snapshot-id>
 
 # View operation history
-but oplog
+but oplog --json
 
 # If stuck after git operations
 git checkout gitbutler/workspace

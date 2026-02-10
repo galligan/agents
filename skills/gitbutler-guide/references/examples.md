@@ -14,7 +14,7 @@ cd /path/to/repo
 but setup
 
 # Check state
-but status
+but status --json
 # ● 0c60c71 (common base) [origin/main]
 
 # Create branch
@@ -25,7 +25,7 @@ echo "export function authenticate()" > src/auth.ts
 echo "test('authenticates user')" > src/auth.test.ts
 
 # Check status for CLI IDs
-but status
+but status --json
 # ╭┄00 [Unassigned Changes]
 # │   m6 A src/auth.ts
 # │   p9 A src/auth.test.ts
@@ -46,7 +46,7 @@ but branch new bugfix-login-timeout
 echo "Fix timeout" > login.ts
 
 # Both exist in same workspace
-but status
+but status --json
 # m6 A dashboard.ts
 # p9 A login.ts
 
@@ -65,7 +65,7 @@ but commit feature-dashboard -m "feat: add dashboard" -p m6
 
 ```bash
 # Oops, committed to wrong branch!
-but status
+but status --json
 # Shows def5678 "feat: add new feature" on bugfix-branch
 
 # Create correct branch
@@ -75,7 +75,7 @@ but branch new feature-new-capability
 but rub def5678 feature-new-capability
 
 # Commit moved!
-but status
+but status --json
 ```
 
 ### Squashing Commits
@@ -94,7 +94,7 @@ echo "Auth code" > auth.ts
 echo "API code" > api.ts
 echo "Docs" > README.md
 
-but status
+but status --json
 # m6 A auth.ts
 # p9 A api.ts
 # i3 A README.md
@@ -124,13 +124,13 @@ but commit docs-update -o -m "docs: update readme"
 # Agent 1 (Claude)
 but branch new claude-feature-auth
 echo "Auth implementation" > src/auth.ts
-but status  # → m6 A src/auth.ts
+but status --json  # → m6 A src/auth.ts
 but commit claude-feature-auth -m "feat: add authentication" -p m6
 
 # Agent 2 (Droid) - simultaneously, same workspace!
 but branch new droid-feature-api
 echo "API implementation" > src/api.ts
-but status  # → p9 A src/api.ts
+but status --json  # → p9 A src/api.ts
 but commit droid-feature-api -m "feat: add API endpoints" -p p9
 
 # Zero conflicts, zero coordination overhead
@@ -198,7 +198,7 @@ but rub <id> test-new-model
 but commit test-new-model -m "test: comprehensive model tests"
 
 # Visualize stack
-but status
+but status --json
 ```
 
 ### Submit Stack as PRs
@@ -235,13 +235,13 @@ gh pr create --title "test: model tests" --base feature-new-model
 but branch delete important-feature --force
 
 # Check oplog
-but oplog
+but oplog --json
 
 # Undo deletion
 but undo
 
 # Verify recovery
-but status  # Branch recovered!
+but status --json  # Branch recovered!
 ```
 
 ### Recover from Bad Reorganization
@@ -255,7 +255,7 @@ but rub <commit1> <branch1>
 but rub <commit2> <branch2>
 
 # Result is a mess - restore to snapshot
-snapshot_id=$(but oplog | grep "Before reorganizing" | awk '{print $1}')
+snapshot_id=$(but oplog --json | jq -r '.[] | select(.message | contains("Before reorganizing")) | .id')
 but oplog restore $snapshot_id
 
 # Back to pre-reorganization state!
@@ -288,7 +288,7 @@ but setup
 
 ```bash
 # Check status for file/hunk IDs
-but status
+but status --json
 # ╭┄00 [Unassigned Changes]
 # │   m6 A src/auth.ts
 # │   p9 A src/api.ts
@@ -305,7 +305,7 @@ but commit feature-auth -p m6,i3 -m "feat: add auth and update docs"
 ```bash
 # After pulling, a commit has conflicts
 but pull
-but status
+but status --json
 # Shows conflicted commit with ⚠️ marker
 
 # Enter resolution mode
@@ -365,7 +365,7 @@ but push
 
 ```bash
 # Three branches applied, feature-b and feature-c conflict
-but status
+but status --json
 # Applied: feature-a (bu), feature-b (bv), feature-c (bw)
 
 # Unapply conflicting branches to focus
@@ -402,7 +402,7 @@ but apply experimental-branch
 but commit empty -m "TODO: Add error handling" --after c3
 
 # Mark it — new changes auto-amend into this placeholder
-but status  # Find the empty commit ID, e.g. c4
+but status --json  # Find the empty commit ID, e.g. c4
 but mark c4
 
 # Make changes across multiple files — all accumulate in c4
@@ -410,7 +410,7 @@ echo "try/catch" >> handler.ts
 echo "error types" >> errors.ts
 
 # Changes auto-amend into c4
-but status  # c4 now contains both files
+but status --json  # c4 now contains both files
 
 # Done — unmark
 but unmark
@@ -462,7 +462,7 @@ but commit refactor-cleanup -m "refactor: extract helper" -p h2
 
 ```bash
 # Multiple files need to go to different branches
-but status
+but status --json
 # m6 A auth.ts
 # p9 A api.ts
 # i3 A utils.ts
@@ -482,7 +482,7 @@ but commit shared-utils -o -m "chore: add utilities"
 
 ```bash
 # Forgot to include a file in an earlier commit
-but status
+but status --json
 # m6 M src/auth.ts  (fix that should be in c2)
 
 # Amend directly into the target commit
@@ -520,7 +520,7 @@ but oplog snapshot --message "Before complex stack changes"
 ```bash
 # Best: Commit directly with -p
 echo "code" > file1.ts
-but status  # → m6 A file1.ts
+but status --json  # → m6 A file1.ts
 but commit my-branch -m "feat: add code" -p m6
 
 # Alternative: Stage immediately if committing later
